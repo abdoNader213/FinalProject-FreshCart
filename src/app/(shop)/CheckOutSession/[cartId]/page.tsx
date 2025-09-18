@@ -39,13 +39,12 @@ export default function Checkoutsession() {
   const params = useParams()
   const cartId = params?.cartId as string
 
-  // استدعاء الـ context
   const context = useContext(OrderContext)
   const order: OrderType[] = context?.order.map((item) => ({
     _id: item._id,
     createdAt: item.createdAt,
     totalOrderPrice: item.totalPrice,
-    paymentMethodType: 'card', // أو استبدل حسب بياناتك
+    paymentMethodType: 'card',
     isPaid: item.status === 'paid',
     isDelivered: item.status === 'delivered',
     cartItems: item.products.map((p) => ({
@@ -60,7 +59,6 @@ export default function Checkoutsession() {
     })),
   })) ?? []
 
-  // Schema التحقق من بيانات الشحن
   const SchemaCheck = zod.object({
     details: zod.string().nonempty('Details is required').min(2),
     city: zod.string().nonempty('City is required').min(2),
@@ -80,8 +78,16 @@ export default function Checkoutsession() {
   })
 
   async function CheckoutsessionPayment(values: zod.infer<typeof SchemaCheck>) {
+    if (!cartId) {
+      console.error('Cart ID is missing')
+      return
+    }
+
     try {
+      console.log('Calling CheckoutPaymenet with:', cartId, values)
       const data = await CheckoutPaymenet(cartId, values)
+      console.log('CheckoutPaymenet response:', data)
+
       if (data?.session?.url) {
         window.open(data.session.url, '_blank')
       } else {
