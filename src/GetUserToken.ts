@@ -9,8 +9,9 @@ interface TokenData {
 }
 
 export async function getUserToken(): Promise<string | null> {
+  const TokenSession = (process.env.NODE_ENV === "production"?'__Secure-next-auth.callback-url':"next-auth.session-token")
   const cookiesData = await cookies()
-  const encryptToken = cookiesData.get("next-auth.session-token")?.value
+  const encryptToken = cookiesData.get(TokenSession)?.value
 
   if (!encryptToken) return null
 
