@@ -51,10 +51,9 @@ export default function Checkoutsession() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto my-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Checkout Form */}
-      <div className="bg-white shadow-lg rounded-xl p-6 lg:col-span-1 col-span-1">
-        <h1 className="text-2xl font-bold mb-6">Check Out Payment</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-6 text-center">Check Out Payment</h1>
         <Form {...shippingForm}>
           <form className="space-y-4" onSubmit={shippingForm.handleSubmit(CheckoutsessionPayment)}>
             <FormField
