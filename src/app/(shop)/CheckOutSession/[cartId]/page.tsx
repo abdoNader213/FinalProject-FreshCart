@@ -9,7 +9,7 @@ import React, { useContext } from 'react'
 import { useForm } from 'react-hook-form'
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { OrderContext, OrderItem } from '../../allorders/OrderProvider'
+import { OrderContext } from '../../allorders/OrderProvider'
 import Image from 'next/image'
 
 // النوع لكل منتج في الكارت
@@ -37,35 +37,45 @@ interface OrderType {
 
 export default function Checkoutsession() {
   const params = useParams()
-  const cartId = params?.cartId as string
+  const cartId = params?.cartId as string | undefined
 
   const context = useContext(OrderContext)
-  const order: OrderType[] = context?.order.map((item) => ({
-    _id: item._id,
-    createdAt: item.createdAt,
-    totalOrderPrice: item.totalPrice,
-    paymentMethodType: 'card',
-    isPaid: item.status === 'paid',
-    isDelivered: item.status === 'delivered',
-    cartItems: item.products.map((p) => ({
-      _id: p.productId,
-      count: p.count,
-      price: p.price,
-      product: {
-        _id: p.productId,
-        title: p.name,
-        imageCover: p.image || '',
-      },
-    })),
-  })) ?? []
 
+  // حماية من undefined context أو order
+  const order: OrderType[] = context?.order
+    ? context.order.map((item) => ({
+        _id: item._id,
+        createdAt: item.createdAt,
+        totalOrderPrice: item.totalPrice,
+        paymentMethodType: 'card',
+        isPaid: item.status === 'paid',
+        isDelivered: item.status === 'delivered',
+        cartItems: Array.isArray(item.products)
+          ? item.products.map((p) => ({
+              _id: p.productId,
+              count: p.count,
+              price: p.price,
+              product: {
+                _id: p.productId,
+                title: p.name,
+                imageCover: p.image || '',
+              },
+            }))
+          : [],
+      }))
+    : []
+
+  // Schema التحقق من بيانات الشحن
   const SchemaCheck = zod.object({
     details: zod.string().nonempty('Details is required').min(2),
     city: zod.string().nonempty('City is required').min(2),
     phone: zod
       .string()
       .nonempty('Phone is required')
-      .regex(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, 'Enter valid Phone'),
+      .regex(
+        /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+        'Enter valid Phone'
+      ),
   })
 
   const shippingForm = useForm<zod.infer<typeof SchemaCheck>>({
@@ -84,10 +94,7 @@ export default function Checkoutsession() {
     }
 
     try {
-      console.log('Calling CheckoutPaymenet with:', cartId, values)
       const data = await CheckoutPaymenet(cartId, values)
-      console.log('CheckoutPaymenet response:', data)
-
       if (data?.session?.url) {
         window.open(data.session.url, '_blank')
       } else {
@@ -167,7 +174,8 @@ export default function Checkoutsession() {
                 </span>
               </div>
               <p>
-                Total Price: <span className="font-semibold text-gray-900">{ord.totalOrderPrice} EGP</span>
+                Total Price:{' '}
+                <span className="font-semibold text-gray-900">{ord.totalOrderPrice} EGP</span>
               </p>
               <p>Payment: {ord.paymentMethodType}</p>
               <p>
@@ -176,7 +184,9 @@ export default function Checkoutsession() {
                   {ord.isPaid ? 'Paid' : 'Not Paid'}
                 </span>
                 |
-                <span className={`ml-2 ${ord.isDelivered ? 'text-green-600' : 'text-orange-600'}`}>
+                <span
+                  className={`ml-2 ${ord.isDelivered ? 'text-green-600' : 'text-orange-600'}`}
+                >
                   {ord.isDelivered ? 'Delivered' : 'Pending'}
                 </span>
               </p>
@@ -203,7 +213,9 @@ export default function Checkoutsession() {
                             alt={item.product.title}
                           />
                         </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{item.product.title}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {item.product.title}
+                        </td>
                         <td className="px-4 py-3">{item.count}</td>
                         <td className="px-4 py-3">{item.price} EGP</td>
                       </tr>
